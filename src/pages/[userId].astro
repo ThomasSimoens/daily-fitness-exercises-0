@@ -1,0 +1,125 @@
+---
+import Base from "../layouts/Base.astro";
+import { getCollection } from "astro:content";
+import { getTodayWeekday } from "../lib/today";
+
+export async function getStaticPaths() {
+  const users = await getCollection("users");
+  return users.map((user) => ({
+    params: { userId: user.data.userId },
+    props: { user },
+  }));
+}
+
+interface UserData {
+  userId: string;
+  displayName: string;
+  exercises: Array<{
+    id: string;
+    name: string;
+    target: string;
+    days: string[];
+  }>;
+}
+
+interface Props {
+  user: {
+    data: UserData;
+    body: string;
+  };
+}
+
+interface HistoryEntry {
+  date: string;
+  bullets: string[];
+}
+
+const { user } = Astro.props;
+const { userId } = Astro.params;
+
+let displayName = "";
+let todaysExercises: UserData["exercises"] = [];
+let recentHistory: HistoryEntry[] = [];
+let notFound = false;
+
+if (!user) {
+  notFound = true;
+} else {
+  displayName = user.data.displayName;
+  const today = getTodayWeekday();
+  todaysExercises = user.data.exercises.filter((ex) =>
+    ex.days.includes(today)
+  );
+
+  // Parse history from body: find all ### YYYY-MM-DD sections
+  const historyRegex = /### (\d{4}-\d{2}-\d{2})\n([\s\S]*?)(?=\n### |$)/g;
+  const historyEntries: HistoryEntry[] = [];
+  let match;
+  while ((match = historyRegex.exec(user.body)) !== null) {
+    const date = match[1];
+    const bullets = match[2]
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith("- "));
+    historyEntries.push({ date, bullets });
+  }
+
+  // Show most recent 10 entries
+  recentHistory = historyEntries.slice(-10).reverse();
+}
+---
+
+{notFound ? (
+  <Base title="User not found">
+    <main>
+      <h1>User not found</h1>
+      <p>No user with ID &ldquo;{userId ?? "unknown"}&rdquo; was found.</p>
+    </main>
+  </Base>
+) : (
+  <Base title={`${displayName} - Daily Exercise Tracker`}>
+    <main>
+      <h1>{displayName}'s Exercises</h1>
+
+      <section>
+        <h2>Today ({getTodayWeekday()})</h2>
+        {todaysExercises.length > 0 ? (
+          <ul>
+            {todaysExercises.map((ex) => (
+              <li>
+                <strong>{ex.name}</strong> &mdash; {ex.target}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Rest day! No exercises scheduled for today.</p>
+        )}
+      </section>
+
+      <section>
+        <h2>Recent History</h2>
+        {recentHistory.length > 0 ? (
+          recentHistory.map((entry) => (
+            <div>
+              <h3>{entry.date}</h3>
+              <ul>
+                {entry.bullets.map((bullet) => (
+                  <li>{bullet.replace(/^- /, "")}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        ) : (
+          <p>No history logged yet.</p>
+        )}
+      </section>
+
+      <hr />
+      <footer>
+        <p>
+          <a href={`/${userId}`}>Permalink to {displayName}</a>
+        </p>
+      </footer>
+    </main>
+  </Base>
+)}
