@@ -7,7 +7,7 @@
     "encrypt": "node scripts/encrypt-users.mjs",
     "decrypt": "node scripts/decrypt-users.mjs",
     "dev": "astro dev",
-    "build": "node scripts/decrypt-users.mjs && astro build",
+    "build": "REQUIRE_CONTENT_KEY=true node scripts/decrypt-users.mjs && astro build",
     "preview": "astro preview"
   },
   "dependencies": {

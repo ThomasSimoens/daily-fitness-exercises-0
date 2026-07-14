@@ -5,12 +5,16 @@
  *
  * Requires CONTENT_KEY env var (32 hex bytes = 64 hex chars).
  *
- * If CONTENT_KEY is not set, generates minimal stub .md files from the
- * .md.locked filenames so the dev server has something to work with.
+ * If CONTENT_KEY is not set and REQUIRE_CONTENT_KEY is "true":
+ *   - Exits with error (used during production builds to prevent stub generation)
+ *
+ * If CONTENT_KEY is not set and REQUIRE_CONTENT_KEY is not set:
+ *   - Generates minimal stub .md files for local dev server
  *
  * Usage:
  *   export CONTENT_KEY="<64-hex-char-key>"
- *   npm run build    # runs decrypt automatically
+ *   npm run build    # requires CONTENT_KEY, fails without it
+ *   npm run decrypt  # generates stubs if CONTENT_KEY not set (local dev)
  */
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "fs";
@@ -34,6 +38,7 @@ if (lockedFiles.length === 0) {
 }
 
 const keyHex = process.env.CONTENT_KEY;
+const requireKey = process.env.REQUIRE_CONTENT_KEY === "true";
 
 if (keyHex) {
   // Production mode: decrypt using the secret key
@@ -79,6 +84,11 @@ if (keyHex) {
     }
   }
 } else {
+  // Check if key is required (e.g., during production build)
+  if (requireKey) {
+    console.error("[decrypt-users] CONTENT_KEY not set — cannot build without decryption key.");
+    process.exit(1);
+  }
   // Local dev mode: generate minimal stubs from filenames
   console.log("[decrypt-users] CONTENT_KEY not set — generating stub .md files for local dev.");
   for (const lockedFile of lockedFiles) {
