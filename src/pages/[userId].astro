@@ -66,7 +66,6 @@ if (!user) {
   displayName = user.data.displayName;
   exercises = user.data.exercises;
 
-  // Parse journal log from body: find all ### YYYY-MM-DD sections
   const journalRegex = /### (\d{4}-\d{2}-\d{2})\n([\s\S]*?)(?=\n### |$)/g;
   const entries: JournalEntry[] = [];
   let match;
@@ -81,7 +80,6 @@ if (!user) {
   journalEntries = entries;
 }
 
-// Get today's date as YYYY-MM-DD
 function getTodayDate(): string {
   const d = new Date();
   const yyyy = d.getFullYear();
@@ -92,119 +90,332 @@ function getTodayDate(): string {
 
 const todayDate = getTodayDate();
 const todayEntry = journalEntries.find((e) => e.date === todayDate);
-const todaysExerciseIds = todayEntry
-  ? todayEntry.bullets.map((b) => b.replace(/^- /, "").split(":")[0].trim())
-  : [];
-const todaysExercises = exercises.filter((ex) => todaysExerciseIds.includes(ex.id));
 
-// Most recent 10 journal entries
+interface TodayBullet {
+  exercise: Exercise | null;
+  log: string;
+  raw: string;
+}
+
+const todaysBullets: TodayBullet[] = todayEntry
+  ? todayEntry.bullets.map((bullet) => {
+      const text = bullet.replace(/^- /, "");
+      const colonIdx = text.indexOf(":");
+      const idPart = colonIdx >= 0 ? text.slice(0, colonIdx).trim() : text.trim();
+      const log = colonIdx >= 0 ? text.slice(colonIdx + 1).trim() : "";
+      const ex = exercises.find((e) => e.id === idPart);
+      return { exercise: ex || null, log, raw: text };
+    })
+  : [];
+
 const recentJournal = journalEntries.slice(-10).reverse();
+
+const phaseColors: Record<string, string> = {
+  warmup: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  main: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+  accessory: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
+  cooldown: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+};
+
+const muscleColors: Record<string, string> = {
+  chest: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
+  legs: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
+  core: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400",
+  arms: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  back: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
+  shoulders: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400",
+  full_body: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+};
+
+const badge = (group: string) => muscleColors[group] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+
+const fatigueDots = (score: number) => {
+  const levels = [
+    { filled: "text-emerald-500", empty: "text-gray-300 dark:text-gray-600" },
+    { filled: "text-emerald-500", empty: "text-gray-300 dark:text-gray-600" },
+    { filled: "text-amber-500", empty: "text-gray-300 dark:text-gray-600" },
+    { filled: "text-orange-500", empty: "text-gray-300 dark:text-gray-600" },
+    { filled: "text-red-500", empty: "text-gray-300 dark:text-gray-600" },
+  ];
+  let html = "";
+  for (let i = 0; i < 5; i++) {
+    const l = levels[Math.min(i, 4)];
+    if (i < score) {
+      html += `<i class="fa-solid fa-circle text-xs ${l.filled}"></i>`;
+    } else {
+      html += `<i class="fa-regular fa-circle text-xs ${l.empty}"></i>`;
+    }
+  }
+  return html;
+};
+
+const firstVideo = (refs: Exercise["reference_urls"]) =>
+  refs.find((r) => r.type === "video") || refs[0];
 ---
 
 {notFound ? (
   <Base title="User not found">
-    <main>
-      <h1>User not found</h1>
-      <p>No user with ID &ldquo;{userId ?? "unknown"}&rdquo; was found.</p>
-    </main>
+    <div class="flex min-h-screen items-center justify-center p-4">
+      <div class="text-center animate-fade-in">
+        <div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/50 dark:to-emerald-800/50">
+          <i class="fa-regular fa-circle-question text-4xl text-emerald-600 dark:text-emerald-400"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">User not found</h1>
+        <p class="text-gray-500 dark:text-gray-400">No user with ID &ldquo;{userId ?? "unknown"}&rdquo; was found.</p>
+      </div>
+    </div>
   </Base>
 ) : (
   <Base title={`${displayName} - Daily Exercise Tracker`}>
-    <main>
-      <h1>{displayName}'s Exercise Pool</h1>
+    <!-- Header with gradient accent -->
+    <header class="relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-transparent to-emerald-500/5 dark:from-emerald-500/20 dark:to-emerald-500/10"></div>
+      <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <div class="text-center">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg shadow-emerald-500/25 mb-6">
+            <i class="fa-solid fa-dumbbell text-2xl text-white"></i>
+          </div>
+          <h1 class="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-3">
+            {displayName}'s Exercises
+          </h1>
+          <p class="text-gray-500 dark:text-gray-400 font-medium">{todayDate}</p>
+        </div>
+      </div>
+    </header>
 
-      <section>
-        <h2>Today's Exercises ({todayDate})</h2>
-        {todayEntry ? (
-          <ul>
-            {todayEntry.bullets.map((bullet) => {
-              const text = bullet.replace(/^- /, "");
-              const [idPart, ...rest] = text.split(":");
-              const ex = exercises.find((e) => e.id === idPart.trim());
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 -mt-8">
+      <!-- Today's Exercises -->
+      <section class="mb-16 animate-fade-in">
+        <div class="flex items-center justify-center gap-2 mb-8">
+          <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+            <i class="fa-solid fa-calendar-day text-emerald-500 mr-2"></i>
+            Today
+          </h2>
+        </div>
+        
+        {todaysBullets.length > 0 ? (
+          <div class="space-y-4 max-w-3xl mx-auto">
+            {todaysBullets.map((item) => {
+              const ex = item.exercise;
+              if (!ex) {
+                return (
+                  <div class="group relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-all duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <p class="relative text-sm text-gray-600 dark:text-gray-300">{item.raw}</p>
+                  </div>
+                );
+              }
+              const vid = firstVideo(ex.reference_urls);
               return (
-                <li>
-                  {ex ? (
-                    <>
-                      <strong>{ex.name}</strong>: {rest.join(":").trim()}
-                    </>
-                  ) : (
-                    <>{text}</>
-                  )}
-                </li>
+                <div class="group relative overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-emerald-200 dark:border-emerald-800/50 p-5 sm:p-6 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300">
+                  <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div class="relative flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex flex-wrap items-center gap-2 mb-3">
+                        <h3 class="font-bold text-gray-900 dark:text-gray-100 text-lg">{ex.name}</h3>
+                        <span class={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${phaseColors[ex.phases[0]] || "bg-gray-100 text-gray-800"}`}>
+                          {ex.phases[0]}
+                        </span>
+                        <span class={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${badge(ex.primary_muscle_group)}`}>
+                          {ex.primary_muscle_group}
+                        </span>
+                      </div>
+                      <p class="text-gray-600 dark:text-gray-300 mb-4">{item.log}</p>
+                      
+                      <div class="flex items-center gap-4 text-xs">
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-gray-500 dark:text-gray-400">Fatigue:</span>
+                          <span class="flex items-center gap-1" set:html={fatigueDots(ex.fatigue_score)}></span>
+                        </div>
+                        <span class="text-gray-500 dark:text-gray-400">{ex.equipment_required.join(", ")}</span>
+                      </div>
+                    </div>
+                    
+                    {vid && (
+                      <a
+                        href={vid.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/25 shrink-0"
+                        title={vid.label}
+                      >
+                        <i class="fa-solid fa-play"></i>
+                      </a>
+                    )}
+                  </div>
+                </div>
               );
             })}
-          </ul>
+          </div>
         ) : (
-          <p>No exercises logged for today yet.</p>
-        )}
-      </section>
-
-      <section>
-        <h2>All Exercises ({exercises.length})</h2>
-        {exercises.length > 0 ? (
-          <ul>
-            {exercises.map((ex) => (
-              <li>
-                <strong>{ex.name}</strong> ({ex.id})
-                <ul>
-                  <li>Muscle group: {ex.primary_muscle_group}</li>
-                  <li>Target muscles: {ex.target_muscles.join(", ")}</li>
-                  <li>Movement: {ex.movement_pattern}</li>
-                  <li>Difficulty: {ex.difficulty}</li>
-                  <li>Fatigue score: {ex.fatigue_score}/5</li>
-                  <li>Metric: {ex.primary_metric}</li>
-                  <li>Phases: {ex.phases.join(", ")}</li>
-                  {ex.is_isometric && <li>Isometric hold</li>}
-                  {ex.is_unilateral && <li>Unilateral movement</li>}
-                  {ex.equipment_required.length > 0 && (
-                    <li>Equipment: {ex.equipment_required.join(", ")}</li>
-                  )}
-                  {ex.reference_urls.length > 0 && (
-                    <li>
-                      References:
-                      <ul>
-                        {ex.reference_urls.map((ref) => (
-                          <li>
-                            <a href={ref.url} target="_blank" rel="noopener noreferrer">
-                              {ref.label} ({ref.type})
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  )}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No exercises defined yet.</p>
-        )}
-      </section>
-
-      <section>
-        <h2>Journal Log</h2>
-        {recentJournal.length > 0 ? (
-          recentJournal.map((entry) => (
-            <div>
-              <h3>{entry.date}</h3>
-              <ul>
-                {entry.bullets.map((bullet) => (
-                  <li>{bullet.replace(/^- /, "")}</li>
-                ))}
-              </ul>
+          <div class="max-w-2xl mx-auto">
+            <div class="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-800 p-12 text-center">
+              <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-emerald-500/10"></div>
+              <div class="relative">
+                <i class="fa-regular fa-calendar-check text-5xl text-emerald-500 mb-4"></i>
+                <p class="text-gray-600 dark:text-gray-300 font-medium mb-2">Nothing logged for today yet.</p>
+                <p class="text-gray-400 dark:text-gray-500 text-sm">
+                  Add <code class="inline-block bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded font-mono text-xs">{todayDate}</code> to your journal.
+                </p>
+              </div>
             </div>
-          ))
-        ) : (
-          <p>No journal entries yet.</p>
+          </div>
         )}
       </section>
 
-      <hr />
-      <footer>
-        <p>
-          <a href={`/${userId}`}>Permalink to {displayName}</a>
-        </p>
+      <!-- All Exercises -->
+      <section class="mb-16">
+        <div class="flex items-center justify-center gap-2 mb-8">
+          <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+            <i class="fa-solid fa-list text-emerald-500 mr-2"></i>
+            All Exercises
+          </h2>
+          <span class="text-xs text-gray-400 dark:text-gray-500 font-normal">({exercises.length})</span>
+        </div>
+        
+        {exercises.length > 0 ? (
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {exercises.map((ex) => {
+              const vid = firstVideo(ex.reference_urls);
+              return (
+                <div class="group relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-800 p-6 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-1">
+                  <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
+                  
+                  <div class="relative">
+                    <div class="flex items-start justify-between gap-3 mb-4">
+                      <h3 class="font-bold text-gray-900 dark:text-gray-100 text-lg leading-tight">{ex.name}</h3>
+                      <span class={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${phaseColors[ex.phases[0]] || "bg-gray-100 text-gray-800"}`}>
+                        {ex.phases[0]}
+                      </span>
+                    </div>
+                    
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">{ex.target_muscles.join(", ")}</p>
+
+                    <div class="flex flex-wrap gap-2 mb-5">
+                      <span class={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${badge(ex.primary_muscle_group)}`}>
+                        {ex.primary_muscle_group}
+                      </span>
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                        {ex.movement_pattern}
+                      </span>
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                        {ex.primary_metric}
+                      </span>
+                      {ex.is_isometric && (
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                          <i class="fa-solid fa-stop mr-1"></i> Isometric
+                        </span>
+                      )}
+                      {ex.is_unilateral && (
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400">
+                          <i class="fa-solid fa-user-half-dress mr-1"></i> Unilateral
+                        </span>
+                      )}
+                    </div>
+
+                    <div class="space-y-2 mb-5 text-xs">
+                      <div class="flex items-center justify-between">
+                        <span class="text-gray-500 dark:text-gray-400 font-medium">Fatigue:</span>
+                        <span class="flex" set:html={fatigueDots(ex.fatigue_score)}></span>
+                      </div>
+                      {ex.phases.length > 0 && (
+                        <div class="flex items-center justify-between">
+                          <span class="text-gray-500 dark:text-gray-400 font-medium">Phases:</span>
+                          <span class="text-gray-700 dark:text-gray-300">{ex.phases.join(", ")}</span>
+                        </div>
+                      )}
+                      {ex.equipment_required.length > 0 && (
+                        <div class="flex items-center justify-between">
+                          <span class="text-gray-500 dark:text-gray-400 font-medium">Equipment:</span>
+                          <span class="text-gray-700 dark:text-gray-300 truncate max-w-[200px]">{ex.equipment_required.join(", ")}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {vid ? (
+                      <a
+                        href={vid.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                      >
+                        <i class="fa-solid fa-play text-[10px]"></i>
+                        {vid.label}
+                      </a>
+                    ) : (
+                      <span class="text-sm text-gray-400 dark:text-gray-500">
+                        <i class="fa-regular fa-circle-play mr-1"></i> No video available
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div class="max-w-2xl mx-auto">
+            <div class="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-800 p-12 text-center">
+              <i class="fa-regular fa-dumbbell text-5xl text-emerald-500 mb-4"></i>
+              <p class="text-gray-600 dark:text-gray-300 font-medium">No exercises defined yet.</p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <!-- Journal Log -->
+      <section>
+        <div class="flex items-center justify-center gap-2 mb-8">
+          <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+            <i class="fa-solid fa-book text-emerald-500 mr-2"></i>
+            Journal Log
+          </h2>
+        </div>
+        
+        {recentJournal.length > 0 ? (
+          <div class="max-w-3xl mx-auto space-y-4">
+            {recentJournal.map((entry) => (
+              <div class="relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-800 p-6">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-emerald-400"></div>
+                
+                <h3 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-4">{entry.date}</h3>
+                
+                <ul class="space-y-3">
+                  {entry.bullets.map((bullet) => {
+                    const text = bullet.replace(/^- /, "");
+                    const colonIdx = text.indexOf(":");
+                    const idPart = colonIdx >= 0 ? text.slice(0, colonIdx).trim() : text.trim();
+                    const rest = colonIdx >= 0 ? text.slice(colonIdx + 1).trim() : "";
+                    const ex = exercises.find((e) => e.id === idPart);
+                    return (
+                      <li class="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-300">
+                        <i class="fa-solid fa-hexagon text-[8px] text-emerald-500 mt-1.5 shrink-0"></i>
+                        {ex ? (
+                          <><span class="font-medium text-gray-800 dark:text-gray-200">{ex.name}</span>{rest ? <span class="text-gray-500">: {rest}</span> : ""}</>
+                        ) : (
+                          <>{text}</>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div class="max-w-2xl mx-auto">
+            <div class="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-800 p-12 text-center">
+              <i class="fa-regular fa-book-open text-5xl text-emerald-500 mb-4"></i>
+              <p class="text-gray-600 dark:text-gray-300 font-medium">No journal entries yet.</p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <footer class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 text-center">
+        <a href={`/${userId}`} class="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+          <i class="fa-solid fa-link text-[10px]"></i>
+          Permalink
+        </a>
       </footer>
     </main>
   </Base>
