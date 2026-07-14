@@ -47,7 +47,7 @@ interface Props {
   };
 }
 
-interface HistoryEntry {
+interface JournalEntry {
   date: string;
   bullets: string[];
 }
@@ -57,7 +57,7 @@ const { userId } = Astro.params;
 
 let displayName = "";
 let exercises: Exercise[] = [];
-let recentHistory: HistoryEntry[] = [];
+let journalEntries: JournalEntry[] = [];
 let notFound = false;
 
 if (!user) {
@@ -66,22 +66,39 @@ if (!user) {
   displayName = user.data.displayName;
   exercises = user.data.exercises;
 
-  // Parse history from body: find all ### YYYY-MM-DD sections
-  const historyRegex = /### (\d{4}-\d{2}-\d{2})\n([\s\S]*?)(?=\n### |$)/g;
-  const historyEntries: HistoryEntry[] = [];
+  // Parse journal log from body: find all ### YYYY-MM-DD sections
+  const journalRegex = /### (\d{4}-\d{2}-\d{2})\n([\s\S]*?)(?=\n### |$)/g;
+  const entries: JournalEntry[] = [];
   let match;
-  while ((match = historyRegex.exec(user.body)) !== null) {
+  while ((match = journalRegex.exec(user.body)) !== null) {
     const date = match[1];
     const bullets = match[2]
       .split("\n")
       .map((l) => l.trim())
       .filter((l) => l.startsWith("- "));
-    historyEntries.push({ date, bullets });
+    entries.push({ date, bullets });
   }
-
-  // Show most recent 10 entries
-  recentHistory = historyEntries.slice(-10).reverse();
+  journalEntries = entries;
 }
+
+// Get today's date as YYYY-MM-DD
+function getTodayDate(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+const todayDate = getTodayDate();
+const todayEntry = journalEntries.find((e) => e.date === todayDate);
+const todaysExerciseIds = todayEntry
+  ? todayEntry.bullets.map((b) => b.replace(/^- /, "").split(":")[0].trim())
+  : [];
+const todaysExercises = exercises.filter((ex) => todaysExerciseIds.includes(ex.id));
+
+// Most recent 10 journal entries
+const recentJournal = journalEntries.slice(-10).reverse();
 ---
 
 {notFound ? (
@@ -95,6 +112,32 @@ if (!user) {
   <Base title={`${displayName} - Daily Exercise Tracker`}>
     <main>
       <h1>{displayName}'s Exercise Pool</h1>
+
+      <section>
+        <h2>Today's Exercises ({todayDate})</h2>
+        {todayEntry ? (
+          <ul>
+            {todayEntry.bullets.map((bullet) => {
+              const text = bullet.replace(/^- /, "");
+              const [idPart, ...rest] = text.split(":");
+              const ex = exercises.find((e) => e.id === idPart.trim());
+              return (
+                <li>
+                  {ex ? (
+                    <>
+                      <strong>{ex.name}</strong>: {rest.join(":").trim()}
+                    </>
+                  ) : (
+                    <>{text}</>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p>No exercises logged for today yet.</p>
+        )}
+      </section>
 
       <section>
         <h2>All Exercises ({exercises.length})</h2>
@@ -140,9 +183,9 @@ if (!user) {
       </section>
 
       <section>
-        <h2>Recent History</h2>
-        {recentHistory.length > 0 ? (
-          recentHistory.map((entry) => (
+        <h2>Journal Log</h2>
+        {recentJournal.length > 0 ? (
+          recentJournal.map((entry) => (
             <div>
               <h3>{entry.date}</h3>
               <ul>
@@ -153,7 +196,7 @@ if (!user) {
             </div>
           ))
         ) : (
-          <p>No history logged yet.</p>
+          <p>No journal entries yet.</p>
         )}
       </section>
 
