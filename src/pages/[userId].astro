@@ -1,7 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
 import { getCollection } from "astro:content";
-import { getTodayWeekday } from "../lib/today";
 
 export async function getStaticPaths() {
   const users = await getCollection("users");
@@ -11,15 +10,34 @@ export async function getStaticPaths() {
   }));
 }
 
+interface Exercise {
+  id: string;
+  name: string;
+  phases: string[];
+  primary_muscle_group: string;
+  target_muscles: string[];
+  movement_pattern: string;
+  is_isometric: boolean;
+  is_unilateral: boolean;
+  plane_of_motion: string;
+  equipment_required: string[];
+  equipment_optional: string[];
+  fatigue_score: number;
+  difficulty: string;
+  primary_metric: string;
+  regression_id: string | null;
+  progression_id: string | null;
+  reference_urls: Array<{
+    label: string;
+    url: string;
+    type: string;
+  }>;
+}
+
 interface UserData {
   userId: string;
   displayName: string;
-  exercises: Array<{
-    id: string;
-    name: string;
-    target: string;
-    days: string[];
-  }>;
+  exercises: Exercise[];
 }
 
 interface Props {
@@ -38,7 +56,7 @@ const { user } = Astro.props;
 const { userId } = Astro.params;
 
 let displayName = "";
-let todaysExercises: UserData["exercises"] = [];
+let exercises: Exercise[] = [];
 let recentHistory: HistoryEntry[] = [];
 let notFound = false;
 
@@ -46,10 +64,7 @@ if (!user) {
   notFound = true;
 } else {
   displayName = user.data.displayName;
-  const today = getTodayWeekday();
-  todaysExercises = user.data.exercises.filter((ex) =>
-    ex.days.includes(today)
-  );
+  exercises = user.data.exercises;
 
   // Parse history from body: find all ### YYYY-MM-DD sections
   const historyRegex = /### (\d{4}-\d{2}-\d{2})\n([\s\S]*?)(?=\n### |$)/g;
@@ -79,20 +94,48 @@ if (!user) {
 ) : (
   <Base title={`${displayName} - Daily Exercise Tracker`}>
     <main>
-      <h1>{displayName}'s Exercises</h1>
+      <h1>{displayName}'s Exercise Pool</h1>
 
       <section>
-        <h2>Today ({getTodayWeekday()})</h2>
-        {todaysExercises.length > 0 ? (
+        <h2>All Exercises ({exercises.length})</h2>
+        {exercises.length > 0 ? (
           <ul>
-            {todaysExercises.map((ex) => (
+            {exercises.map((ex) => (
               <li>
-                <strong>{ex.name}</strong> &mdash; {ex.target}
+                <strong>{ex.name}</strong> ({ex.id})
+                <ul>
+                  <li>Muscle group: {ex.primary_muscle_group}</li>
+                  <li>Target muscles: {ex.target_muscles.join(", ")}</li>
+                  <li>Movement: {ex.movement_pattern}</li>
+                  <li>Difficulty: {ex.difficulty}</li>
+                  <li>Fatigue score: {ex.fatigue_score}/5</li>
+                  <li>Metric: {ex.primary_metric}</li>
+                  <li>Phases: {ex.phases.join(", ")}</li>
+                  {ex.is_isometric && <li>Isometric hold</li>}
+                  {ex.is_unilateral && <li>Unilateral movement</li>}
+                  {ex.equipment_required.length > 0 && (
+                    <li>Equipment: {ex.equipment_required.join(", ")}</li>
+                  )}
+                  {ex.reference_urls.length > 0 && (
+                    <li>
+                      References:
+                      <ul>
+                        {ex.reference_urls.map((ref) => (
+                          <li>
+                            <a href={ref.url} target="_blank" rel="noopener noreferrer">
+                              {ref.label} ({ref.type})
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  )}
+                </ul>
               </li>
             ))}
           </ul>
         ) : (
-          <p>Rest day! No exercises scheduled for today.</p>
+          <p>No exercises defined yet.</p>
         )}
       </section>
 
