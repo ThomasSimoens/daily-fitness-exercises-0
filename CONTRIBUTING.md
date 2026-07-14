@@ -133,10 +133,18 @@ git push
 | Framework preset    | Astro                    |
 | Build command        | `npm run build`          |
 | Build output directory | `dist`                |
+| **Deploy command**   | *(leave empty)*          |
+
+**Important**: Do NOT add a deploy command. Cloudflare Pages automatically deploys the `dist/` folder after a successful build.
 
 ### 3. Set environment variables (optional)
 
-If you want basic auth, add a `BASIC_AUTH_CREDENTIALS` environment variable in the **Environment variables** section with the value `username:password`.
+Add these environment variables in the **Environment variables** section:
+
+| Variable           | Value (your key/credentials) | Encrypt |
+|--------------------|------------------------------|---------|
+| `CONTENT_KEY`       | Your 64-hex-char key         | ✅       |
+| `BASIC_AUTH_CREDENTIALS` | `username:password`      | ✅       |
 
 ### 4. Deploy
 
