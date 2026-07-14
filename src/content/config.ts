@@ -31,6 +31,7 @@ const usersCollection = defineCollection({
   schema: z.object({
     userId: z.string(),
     displayName: z.string(),
+    profile_description: z.string().optional(),
     exercises: z.array(exerciseSchema),
   }),
 });
