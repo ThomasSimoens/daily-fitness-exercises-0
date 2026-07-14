@@ -24,7 +24,7 @@ daily-exercise/
 │   │   ├── config.ts          # zod schema for user markdown frontmatter
 │   │   └── users/
 │   │       ├── thomas.md
-│   │       └── partner.md
+│   │       └── lobke.md
 │   ├── pages/
 │   │   └── [userId].astro     # dynamic route, one page per user
 │   ├── lib/
