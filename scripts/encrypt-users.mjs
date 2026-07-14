@@ -17,6 +17,21 @@ import { resolve, dirname, extname } from "path";
 import { fileURLToPath } from "url";
 import { createCipheriv, randomBytes } from "crypto";
 
+// Load CONTENT_KEY from .env if not already set
+if (!process.env.CONTENT_KEY) {
+  try {
+    const envPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", ".env");
+    const envContent = readFileSync(envPath, "utf-8");
+    const match = envContent.match(/^CONTENT_KEY=(.+)$/m);
+    if (match) {
+      process.env.CONTENT_KEY = match[1].trim();
+      console.log("[encrypt-users] Loaded CONTENT_KEY from .env");
+    }
+  } catch {
+    // .env not found, continue without it
+  }
+}
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const usersDir = resolve(__dirname, "..", "src", "content", "users");
 

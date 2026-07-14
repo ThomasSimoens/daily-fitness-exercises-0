@@ -75,18 +75,22 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Set this key in two places:
 
-- **Your local shell** (for encrypting):
+- **Your local `.env` file** (for encrypting/decrypting locally):
   ```bash
-  export CONTENT_KEY="e4ec6e...b903467"
+  # .env
+  CONTENT_KEY=e4ec6e7ffc...b903467
   ```
+
 - **Cloudflare Pages** (for decrypting at build time):  
   Go to **Settings** → **Environment variables** → **Add variable**:
 
   | Variable      | Value (your 64-hex-char key) | Encrypt |
   |---------------|------------------------------|---------|
-  | `CONTENT_KEY` | `e4ec6e7...b903467`          | ✅       |
+  | `CONTENT_KEY` | `e4ec6e...b903467`          | ✅       |
 
   Make sure to check **Encrypt** so the key is stored securely.
+
+**Important:** `.env` is already in `.gitignore` and should never be committed to the repository.
 
 ### Workflow
 
@@ -99,9 +103,8 @@ npm run dev
 
 **Committing real data safely:**
 ```bash
-# 1. Put your real data in the .md files
+# 1. Put your real data in the .md files (ensure .env has CONTENT_KEY for encryption)
 # 2. Encrypt them:
-export CONTENT_KEY="<your-64-hex-key>"
 npm run encrypt
 # 3. The .md.locked files are now updated
 # 4. Commit BOTH .md (stub) and .md.locked (encrypted real data):
@@ -110,6 +113,8 @@ git commit -m "update workout data"
 git push
 # Cloudflare Pages rebuilds, decrypts, and serves the real data
 ```
+
+If you have `.env` set up with `CONTENT_KEY`, the encrypt script will use it automatically.
 
 ## Adding a new user
 
