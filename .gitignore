@@ -4,3 +4,8 @@ dist
 .env.local
 .DS_Store
 *.log
+
+# User markdown files — never commit raw copies
+# Only .md.locked (encrypted) files should be in the repo
+src/content/users/*.md
+!src/content/users/*.md.locked

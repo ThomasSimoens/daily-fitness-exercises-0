@@ -53,6 +53,64 @@ daily-exercise/
 └── .gitignore
 ```
 
+## Security: keeping user data private
+
+Because this repo may be public (required for Cloudflare Pages on the free tier), real user data is **encrypted** before committing, not stored in plaintext in the repo.
+
+### How it works
+
+1. **Locally**: you edit the `.md` files in `src/content/users/` — they work with `npm run dev` as normal.
+2. **Before committing**: run `npm run encrypt`, which encrypts each `.md` file into a `.md.locked` file using AES-256-CBC.
+3. **In git**: commit the `.md.locked` files. The `.md` files stay as **stub/example** data (safe to commit, just show the format).
+4. **On Cloudflare Pages**: the build runs `npm run decrypt` first (as part of `npm run build`), which uses the same `CONTENT_KEY` secret to decrypt `.md.locked` → `.md`, then Astro builds from the real data.
+
+### Setting up the encryption key
+
+Generate a 256-bit key (64 hex characters):
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# → e.g. e4ec6e7ffc61145311992fb62ad8409c2254a020e1066cb0d3992a1e4b903467
+```
+
+Set this key in two places:
+
+- **Your local shell** (for encrypting):
+  ```bash
+  export CONTENT_KEY="e4ec6e...b903467"
+  ```
+- **Cloudflare Pages** (for decrypting at build time):  
+  Go to **Settings** → **Environment variables** → **Add variable**:
+
+  | Variable      | Value (your 64-hex-char key) | Encrypt |
+  |---------------|------------------------------|---------|
+  | `CONTENT_KEY` | `e4ec6e7...b903467`          | ✅       |
+
+  Make sure to check **Encrypt** so the key is stored securely.
+
+### Workflow
+
+**Editing locally (no encryption needed):**
+```bash
+npm run dev
+# Edit src/content/users/*.md freely
+# The stub files are fine for development
+```
+
+**Committing real data safely:**
+```bash
+# 1. Put your real data in the .md files
+# 2. Encrypt them:
+export CONTENT_KEY="<your-64-hex-key>"
+npm run encrypt
+# 3. The .md.locked files are now updated
+# 4. Commit BOTH .md (stub) and .md.locked (encrypted real data):
+git add .
+git commit -m "update workout data"
+git push
+# Cloudflare Pages rebuilds, decrypts, and serves the real data
+```
+
 ## Adding a new user
 
 1. Create a new markdown file in `src/content/users/` (filename doesn't matter).
