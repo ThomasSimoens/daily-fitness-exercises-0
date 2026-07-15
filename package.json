@@ -8,7 +8,8 @@
     "decrypt": "node scripts/decrypt-users.mjs",
     "dev": "astro dev",
     "build": "REQUIRE_CONTENT_KEY=true node scripts/decrypt-users.mjs && astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "astro": "^5.0.0"
