@@ -171,6 +171,64 @@ npm run decrypt
 ```
 
 If `.env` contains `CONTENT_KEY`, the script will use it automatically. Without it, stub files are generated.
+### Fix broken YouTube video links
+
+When `reference_urls` in a user's exercise data point to invalid/removed YouTube videos, use the following approach to find verified replacements:
+
+**Step 1: Identify broken URLs**
+
+Use YouTube's oEmbed API to check if each video URL is valid. A valid video returns a JSON response with the video title; an invalid/removed video returns HTTP 404:
+
+```bash
+# Check a video (valid returns JSON with title, invalid returns 404)
+curl "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=VIDEO_ID&format=json"
+```
+
+A valid response looks like:
+```json
+{"title": "The Perfect Push Up | Do it right!", "author_name": "Calisthenicmovement", ...}
+```
+
+**Step 2: Find replacement videos**
+
+Search for relevant exercise tutorial videos using an Invidious instance (a privacy-respecting YouTube frontend that returns static HTML):
+
+```bash
+# Search for replacement videos and extract video IDs
+curl -s 'https://inv.nadeko.net/search?q=plank+exercise+tutorial' | grep -oE '/watch\?v=[a-zA-Z0-9_-]{11}' | sort -u
+```
+
+Prefer videos from reputable fitness channels such as:
+- Calisthenicmovement / ScottHermanFitness (reliable form tutorials)
+- Jeff Nippard / Renaissance Periodization (evidence-based fitness)
+- Athlean-X / Squat University / E3 Rehab (rehabilitation & proper form)
+- Men's Health / Well+Good / PureGym (accessible beginner tutorials)
+- Rogue Fitness / Buff Dudes (equipment-focused demos)
+
+**Step 3: Verify replacements**
+
+Confirm each candidate video is valid using the oEmbed API:
+
+```bash
+curl "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=NEW_VIDEO_ID&format=json"
+```
+
+Only use videos that return a valid JSON response with a title matching the exercise.
+
+**Step 4: Update the file**
+
+Replace the broken URL in the user's markdown file with the verified working URL, keeping the same `label` and `type`.
+
+**Step 5: Encrypt and commit**
+
+```bash
+npm run encrypt
+git add .
+git commit -m "Fix broken YouTube video links for [exercise names]"
+git push
+```
+
+
 
 ## Checking the CONTENT_KEY
 
