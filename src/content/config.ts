@@ -32,6 +32,7 @@ const usersCollection = defineCollection({
     userId: z.string(),
     displayName: z.string(),
     profile_description: z.string().optional(),
+    equipment_available: z.array(z.string()).optional(),
     exercises: z.array(exerciseSchema),
   }),
 });
