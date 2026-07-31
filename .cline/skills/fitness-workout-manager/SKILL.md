@@ -102,6 +102,16 @@ export CONTENT_KEY="your-64-hex-character-key-here"
 
 Note: `.env` is already in `.gitignore` and should never be committed to the repository.
 
+### Step 1.5: Backup the raw markdown before editing
+
+Because `*.md` files are gitignored and decrypted locally, create a timestamped backup of the targeted file before making changes:
+
+```bash
+cp src/content/users/<userId>.md src/content/users/<userId>.backup.$(date +%s).md
+```
+
+This leaves a `.md` file alongside the working copy so you can easily compare diffs in VS Code, while the backup filename itself is unique and not committed to the repository.
+
 ### Step 2: Edit the user's markdown file
 
 Open `src/content/users/<userId>.md` and add/modify:
