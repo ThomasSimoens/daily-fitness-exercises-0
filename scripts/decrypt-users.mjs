@@ -45,7 +45,9 @@ if (!existsSync(usersDir)) {
   mkdirSync(usersDir, { recursive: true });
 }
 
-const lockedFiles = readdirSync(usersDir).filter((f) => f.endsWith(".md.locked"));
+const lockedFiles = readdirSync(usersDir).filter(
+  (f) => f.endsWith(".md.locked") && !/\.backup\.\d+\.md\.locked$/.test(f)
+);
 
 if (lockedFiles.length === 0) {
   console.log("[decrypt-users] No .md.locked files found — skipping.");

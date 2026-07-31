@@ -1,4 +1,5 @@
 import { defineCollection, z } from "astro:content";
+import { glob } from "astro/loaders";
 
 const referenceUrlSchema = z.object({
   label: z.string(),
@@ -27,7 +28,7 @@ const exerciseSchema = z.object({
 });
 
 const usersCollection = defineCollection({
-  type: "content",
+  loader: glob({ pattern: ["*.md", "!*.backup.*.md"], base: "src/content/users" }),
   schema: z.object({
     userId: z.string(),
     displayName: z.string(),

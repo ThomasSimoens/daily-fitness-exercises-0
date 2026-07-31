@@ -56,7 +56,7 @@ if (!existsSync(usersDir)) {
 }
 
 const files = readdirSync(usersDir).filter(
-  (f) => f.endsWith(".md") && !f.endsWith(".md.locked")
+  (f) => f.endsWith(".md") && !f.endsWith(".md.locked") && !/\.backup\.\d+\.md$/.test(f)
 );
 
 if (files.length === 0) {
