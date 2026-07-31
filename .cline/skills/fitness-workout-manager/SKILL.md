@@ -127,14 +127,17 @@ Add a date entry under `## History`:
 - exercise-id: sets×reps (e.g., "3x10")
 ```
 
-### Step 3: Encrypt before committing (optional but recommended)
+### Step 3: Encrypt the updated markdown (do NOT commit or push)
+
+Run the encryption script to update the `.md.locked` file:
 
 ```bash
 npm run encrypt
 git add .
-git commit -m "Add exercise and schedule workout"
-git push
 ```
+
+**Important:** Do NOT run `git commit` or `git push`.  
+Leave the changes staged locally so you can build/test the site (`npm run build`, `npm run preview`) before the user decides to commit and push manually.
 
 ## Helper: Generate today's date format
 
