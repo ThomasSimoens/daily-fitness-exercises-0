@@ -108,7 +108,7 @@ Use conservative defaults when uncertain:
 - `is_unilateral`: false unless single-leg or single-arm
 - `plane_of_motion`: sagittal for most movements; frontal for lateral raises, side planks; transverse for rotations
 
-**Timestamped URLs:** If the transcript clearly indicates when the exercise demo starts, append `?t=START_S` or `&t=START_S` (seconds) to the YouTube URL. If unsure, omit the timestamp and start at 0.
+**Timestamped URLs:** If the transcript clearly indicates when the exercise demo starts, append `&t=START_S` (seconds) to the YouTube URL. Use `&` (not `?`) because the URL already contains a query string (`?v=...`). If unsure, omit the timestamp and start at 0.
 
 ### Step 5: Add Exercises to a User Profile
 
@@ -181,7 +181,7 @@ User request: *"Extract exercises from https://www.youtube.com/shorts/oDwpskbQn2
 
 1. Fetch transcript for `oDwpskbQn2E`.
 2. Analyze transcript to identify e.g., "Glute Bridges", "Reverse Crunches".
-3. Create schema entries with proper fields, including a `reference_url` with a timestamp if the demo start is clear (e.g., `?t=70`).
+3. Create schema entries with proper fields, including a `reference_url` with a timestamp if the demo start is clear (e.g., `&t=70`).
 4. Backup `src/content/users/lobke.md`.
 5. Append new exercises to her `exercises:` array.
 6. Optionally add a journal entry for today.
@@ -200,5 +200,5 @@ User request: *"Extract exercises from https://www.youtube.com/watch?v=lDrebo7qw
    - `towel_hamstring_curls` (accessory, legs)
    - `pigeon_glute_stretch` (cooldown, core)
 4. Skip advanced plyometric/skill moves.
-5. Use timestamps from transcript for `reference_url` (e.g., `?t=520`).
+5. Use timestamps from transcript for `reference_url` (e.g., `&t=520`).
 6. Backup, append, and optionally schedule today's journal entry.
