@@ -163,7 +163,17 @@ Example:
 - **Use existing terms**: Match exercise names to those already in the codebase when possible for consistency.
 - **Equipment constraints**: If the target user has limited equipment, filter or adapt suggestions accordingly. See existing `equipment_available` on the user profile.
 - **Short-form content**: YouTube Shorts often show 1-3 exercises. Keep additions minimal and targeted.
+- **Long-form content**: A full workout video can contain 5-10+ distinct exercises. Extract all clearly demonstrated movements and assign them to `phases` based on where they appear (warmup, main, accessory, cooldown).
+- **Household items**: When a demo uses towels, couch edges, or other everyday objects, treat them as optional equipment. Map generic items to existing equipment tokens when possible (e.g., towel → optional alongside `resistance_band`), but don't invent new required equipment types.
+- **Difficulty filtering**: Don't add advanced power/skill moves (e.g., single-leg squat jumps, plyometrics) to users who prefer light-to-moderate exercise. Favor controlled, lower-fatigue variations.
 - **Credibility**: Use the actual video link as the `reference_url` so users can see the source.
+
+### Extracting Multiple Exercises From One Video
+
+1. Segment the transcript by exercise transitions ("next", "now we're going to", "for this next").
+2. For each segment, derive: id, name, phases, primary_muscle_group, target_muscles, movement_pattern, equipment, fatigue_score, difficulty, primary_metric.
+3. Prefer controlled, scalable variations over high-skill or high-impact moves unless the user explicitly wants athletic/advanced training.
+4. Timestamp each `reference_url` to the clearest demo start within the segment.
 
 ## Example Usage
 
@@ -176,3 +186,19 @@ User request: *"Extract exercises from https://www.youtube.com/shorts/oDwpskbQn2
 5. Append new exercises to her `exercises:` array.
 6. Optionally add a journal entry for today.
 7. Run `npm run encrypt` and leave changes unstaged for the user to review/test.
+
+### Multi-exercise long-form video example
+
+User request: *"Extract exercises from https://www.youtube.com/watch?v=lDrebo7qweY and add them to Lobke's profile."*
+
+1. Fetch transcript for `lDrebo7qweY` (~13 minutes, full leg workout, no equipment).
+2. Segment transcript into warmup, main, accessory, cooldown sections.
+3. Identify and filter exercises suitable for Lobke's light-to-moderate preference:
+   - `ankle_pulses` (warmup, legs)
+   - `scapular_pullbacks` (warmup, back)
+   - `hip_flexor_raises` (accessory, core)
+   - `towel_hamstring_curls` (accessory, legs)
+   - `pigeon_glute_stretch` (cooldown, core)
+4. Skip advanced plyometric/skill moves.
+5. Use timestamps from transcript for `reference_url` (e.g., `?t=520`).
+6. Backup, append, and optionally schedule today's journal entry.
