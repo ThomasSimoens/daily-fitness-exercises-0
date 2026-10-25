@@ -1,6 +1,6 @@
 ---
 name: daily-workout-scheduler
-description: Use this skill to schedule (or re-run, preview, or adjust) the daily workout journal entries for all users. It explains the scheduled GitHub Actions runner and the planner script that picks exercises from each user's library.
+description: Use this skill to schedule (or re-run, preview, or adjust) the daily workout journal entries for all users. It explains the scheduled Claude routine and the fallback planner script that picks exercises from each user's library.
 ---
 
 # Daily Workout Scheduler
