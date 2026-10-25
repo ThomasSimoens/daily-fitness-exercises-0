@@ -14,7 +14,7 @@ git clone git@github.com:ThomasSimoens/daily-fitness-exercises-0.git
 cd daily-fitness-exercises-0
 
 # Use the correct Node.js version
-nvm use         # reads .nvmrc if present, or use: nvm install lts/iron
+nvm use         # reads .nvmrc
 
 # Install dependencies
 npm install
@@ -150,6 +150,15 @@ Add these environment variables in the **Environment variables** section:
 |--------------------|------------------------------|---------|
 | `CONTENT_KEY`       | Your 64-hex-char key         | ✅       |
 | `BASIC_AUTH_CREDENTIALS` | `username:password`      | ✅       |
+
+### Node version (keep in sync)
+
+The Node version is pinned in two places, and they must match:
+
+1. `.nvmrc` (used locally and by the Claude routine's sandbox)
+2. A plain `NODE_VERSION` variable in the Cloudflare build settings (Variables and secrets)
+
+Cloudflare's build cache once kept resolving a stale `lts/iron` from an early commit and failed with "error occurred while installing tools or dependencies", even though `.nvmrc` was correct. Setting `NODE_VERSION` explicitly fixed it. When bumping Node, update both, then retry the build (clear the build cache if it still fails).
 
 ### 4. Deploy
 
