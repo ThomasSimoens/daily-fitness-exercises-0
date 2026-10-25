@@ -183,4 +183,4 @@ npm run preview
 
 ## Scheduled daily workouts
 
-`.github/workflows/daily-workouts.yml` runs daily (00:30 UTC), adds a journal entry for each user via `scripts/schedule-daily-workout.mjs`, re-encrypts, and pushes to `main`, which triggers the Cloudflare Pages deploy. It needs a `CONTENT_KEY` repository secret (Settings → Secrets and variables → Actions). Trigger it manually from the Actions tab, or preview locally with `node scripts/schedule-daily-workout.mjs --dry-run`. See `.claude/skills/daily-workout-scheduler/SKILL.md`.
+A Claude Code cloud routine ("Daily workout planner", https://claude.ai/code/routines) runs daily at 00:30 UTC. It decrypts the user files, adds a journal entry for each user, re-encrypts, validates the build, and pushes `.md.locked` to `main`, which triggers the Cloudflare Pages deploy. The routine's environment needs a `CONTENT_KEY` environment variable. `scripts/schedule-daily-workout.mjs` is the rule-based fallback planner (preview with `--dry-run`). See `.claude/skills/daily-workout-scheduler/SKILL.md`.

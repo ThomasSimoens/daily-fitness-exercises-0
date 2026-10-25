@@ -5,9 +5,9 @@ description: Use this skill to schedule (or re-run, preview, or adjust) the dail
 
 # Daily Workout Scheduler
 
-A GitHub Actions workflow (`.github/workflows/daily-workouts.yml`) runs every day at 00:30 UTC. It decrypts the user files, runs `scripts/schedule-daily-workout.mjs`, re-encrypts, builds the site to validate it, and pushes the updated `.md.locked` files to `main`. The push triggers the Cloudflare Pages deployment.
+A Claude Code cloud routine ("Daily workout planner", managed at https://claude.ai/code/routines) runs every day at 00:30 UTC. It decrypts the user files, plans each user's workout (using this skill and the fitness-workout-manager skill, with `scripts/schedule-daily-workout.mjs` as the rule-based fallback), re-encrypts, builds the site to validate it, and pushes the updated `.md.locked` files to `main`. The push triggers the Cloudflare Pages deployment.
 
-## Planner rules (`scripts/schedule-daily-workout.mjs`)
+## Fallback planner rules (`scripts/schedule-daily-workout.mjs`)
 
 - Adds a `### YYYY-MM-DD` entry per user; skips users that already have one for the date.
 - Main block: up to 4 `main`/`accessory` exercises from different muscle groups, preferring exercises not done recently and avoiding yesterday's muscle groups, capped by a total fatigue budget of 12.
@@ -28,10 +28,6 @@ npm run encrypt
 
 Back up the `.md` first (see the fitness-workout-manager skill) when editing real data.
 
-## Manual run in CI
-
-GitHub → Actions → "Schedule daily workouts" → Run workflow (optional `date` input).
-
 ## Setup
 
-Repo secret `CONTENT_KEY` (same value as in `.env` / Cloudflare Pages) is required.
+The routine's cloud environment ("Daily Exercises 0") needs a `CONTENT_KEY` environment variable (same value as in `.env` / Cloudflare Pages), GitHub connected to the Claude account, and permission to push to `main`.
