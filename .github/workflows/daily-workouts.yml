@@ -39,13 +39,15 @@ jobs:
         id: plan
         run: node scripts/schedule-daily-workout.mjs ${{ inputs.date && format('--date {0}', inputs.date) || '' }}
 
-      - name: Validate site builds
-        if: steps.plan.outputs.changed == 'true'
-        run: npm run build
-
       - name: Re-encrypt user data
         if: steps.plan.outputs.changed == 'true'
         run: npm run encrypt
+
+      # `npm run build` decrypts first, so it must run after encrypting
+      # (otherwise it overwrites the edited .md files with the old data).
+      - name: Validate site builds
+        if: steps.plan.outputs.changed == 'true'
+        run: npm run build
 
       - name: Commit and push
         if: steps.plan.outputs.changed == 'true'

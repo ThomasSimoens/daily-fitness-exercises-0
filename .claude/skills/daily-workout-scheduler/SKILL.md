@@ -5,7 +5,7 @@ description: Use this skill to schedule (or re-run, preview, or adjust) the dail
 
 # Daily Workout Scheduler
 
-A GitHub Actions workflow (`.github/workflows/daily-workouts.yml`) runs every day at 00:30 UTC. It decrypts the user files, runs `scripts/schedule-daily-workout.mjs`, builds the site to validate it, re-encrypts, and pushes the updated `.md.locked` files to `main`. The push triggers the Cloudflare Pages deployment.
+A GitHub Actions workflow (`.github/workflows/daily-workouts.yml`) runs every day at 00:30 UTC. It decrypts the user files, runs `scripts/schedule-daily-workout.mjs`, re-encrypts, builds the site to validate it, and pushes the updated `.md.locked` files to `main`. The push triggers the Cloudflare Pages deployment.
 
 ## Planner rules (`scripts/schedule-daily-workout.mjs`)
 
