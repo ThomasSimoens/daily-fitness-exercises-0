@@ -180,3 +180,7 @@ Output goes to `dist/`. You can preview the build locally with:
 
 ```bash
 npm run preview
+
+## Scheduled daily workouts
+
+`.github/workflows/daily-workouts.yml` runs daily (00:30 UTC), adds a journal entry for each user via `scripts/schedule-daily-workout.mjs`, re-encrypts, and pushes to `main`, which triggers the Cloudflare Pages deploy. It needs a `CONTENT_KEY` repository secret (Settings → Secrets and variables → Actions). Trigger it manually from the Actions tab, or preview locally with `node scripts/schedule-daily-workout.mjs --dry-run`. See `.claude/skills/daily-workout-scheduler/SKILL.md`.

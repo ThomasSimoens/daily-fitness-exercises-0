@@ -3,7 +3,7 @@
  * Fetches a YouTube video title and transcript.
  *
  * Usage:
- *   node .cline/skills/youtube-exercise-extractor/scripts/fetch-youtube-transcript.mjs "https://www.youtube.com/watch?v=VIDEO_ID"
+ *   node .claude/skills/youtube-exercise-extractor/scripts/fetch-youtube-transcript.mjs "https://www.youtube.com/watch?v=VIDEO_ID"
  *
  * Outputs JSON to stdout:
  * {
